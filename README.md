@@ -5,7 +5,7 @@
 
 Node.js wrapper for the [NLSQL MCP Server](https://github.com/tushar-badhwar/nlsql-mcp-server) - Convert natural language questions into SQL queries using AI-powered multi-agent system.
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Install globally
@@ -18,23 +18,23 @@ nlsql-mcp-server start
 npx nlsql-mcp-server start
 ```
 
-## ✨ Features
+## Features
 
-- **🤖 AI-Powered**: Converts natural language to SQL using OpenAI and CrewAI
-- **🔗 Multi-Database**: Supports SQLite, PostgreSQL, and MySQL
-- **🧠 Smart Analysis**: AI-powered database schema analysis
-- **⚡ Easy Installation**: One-command setup with automatic Python dependency management
-- **🎯 MCP Protocol**: Compatible with Claude Desktop and other MCP clients
-- **🛡️ Safe Execution**: Query validation and configurable limits
-- **📊 Sample Data**: Built-in NBA database for testing
+- **AI-Powered**: Converts natural language to SQL using OpenAI and CrewAI
+- **Multi-Database**: Supports SQLite, PostgreSQL, and MySQL
+- **Smart Analysis**: AI-powered database schema analysis
+- **Easy Installation**: One-command setup with automatic Python dependency management
+- **MCP Protocol**: Compatible with Claude Desktop and other MCP clients
+- **Safe Execution**: Query validation and configurable limits
+- **Sample Data**: Built-in NBA database for testing
 
-## 📋 Prerequisites
+## Prerequisites
 
 - **Node.js 14+**: JavaScript runtime
 - **Python 3.8+**: For the underlying MCP server
 - **OpenAI API Key**: For natural language processing
 
-## 📦 Installation
+## Installation
 
 ### Global Installation (Recommended)
 
@@ -49,12 +49,12 @@ npm install nlsql-mcp-server
 ```
 
 The package will automatically:
-1. ✅ Detect your Python installation
-2. ✅ Install required Python dependencies
-3. ✅ Set up the NLSQL MCP server
-4. ✅ Verify the installation
+1. Detect your Python installation
+2. Install required Python dependencies
+3. Set up the NLSQL MCP server
+4. Verify the installation
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Setup
 
@@ -90,7 +90,7 @@ This will output the configuration to add to your Claude Desktop settings:
 }
 ```
 
-## 🎯 Usage
+## Usage
 
 ### Command Line Interface
 
@@ -130,7 +130,7 @@ const server = new NLSQLMCPServer({
 await server.start();
 ```
 
-## 🛠️ Available Tools
+## Available Tools
 
 When running, the server provides these MCP tools:
 
@@ -147,7 +147,7 @@ When running, the server provides these MCP tools:
 | `get_connection_status` | Check database connection status |
 | `disconnect_database` | Disconnect from database |
 
-## 📝 Examples
+## Examples
 
 ### Claude Desktop Usage
 
@@ -178,7 +178,7 @@ Then ask questions like:
 - "List all players with 'James' in their name"
 - "Which teams are from California?"
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Test the Node.js wrapper
@@ -192,7 +192,7 @@ nlsql-mcp-server start --debug
 # Then use with Claude Desktop
 ```
 
-## 🚨 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -250,7 +250,7 @@ Logs are written to:
 - **Linux/macOS**: `~/.config/nlsql-mcp-server/logs/`
 - **Windows**: `%APPDATA%\nlsql-mcp-server\logs\`
 
-## 🔗 Integration Examples
+## Integration Examples
 
 ### VS Code with Continue.dev
 
@@ -285,14 +285,14 @@ mcpServer.stdout.on('data', handleMCPMessage);
 mcpServer.stdin.write(JSON.stringify(mcpRequest));
 ```
 
-## 📊 Performance
+## Performance
 
 - **Startup Time**: ~2-3 seconds
 - **Query Processing**: 2-10 seconds (depending on complexity)
 - **Memory Usage**: ~100-200MB
 - **Database Support**: SQLite, PostgreSQL, MySQL
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -300,17 +300,17 @@ mcpServer.stdin.write(JSON.stringify(mcpRequest));
 4. Run tests: `npm test`
 5. Submit a pull request
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## 🙏 Credits
+## Credits
 
 - **Original Python Server**: [NLSQL MCP Server](https://github.com/tushar-badhwar/nlsql-mcp-server)
 - **Underlying Application**: [nl2sql](https://github.com/tushar-badhwar/nl2sql)
 - **Built with**: [Model Context Protocol (MCP)](https://modelcontextprotocol.io/), [CrewAI](https://crewai.com/), [OpenAI](https://openai.com/)
 
-## 🆘 Support
+## Support
 
 - **Issues**: [GitHub Issues](https://github.com/tushar-badhwar/nlsql-mcp-server/issues)
 - **Documentation**: [GitHub Repository](https://github.com/tushar-badhwar/nlsql-mcp-server)
@@ -318,4 +318,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-**Made with ❤️ by [Tushar Badhwar](https://github.com/tushar-badhwar)**
+**Made by [Tushar Badhwar](https://github.com/tushar-badhwar)**
