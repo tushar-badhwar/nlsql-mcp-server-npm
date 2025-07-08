@@ -1,0 +1,73 @@
+{
+  "name": "nlsql-mcp-server",
+  "version": "1.0.0",
+  "description": "Node.js wrapper for NLSQL MCP Server - Convert natural language to SQL using AI",
+  "main": "index.js",
+  "bin": {
+    "nlsql-mcp-server": "./bin/nlsql-mcp-server.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test/test.js",
+    "install-python-deps": "node scripts/install-deps.js",
+    "postinstall": "npm run install-python-deps"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "sql",
+    "natural-language",
+    "ai",
+    "database",
+    "crewai",
+    "openai",
+    "nlp",
+    "query-generation"
+  ],
+  "author": {
+    "name": "Tushar Badhwar",
+    "email": "badhwar.tushar@gmail.com",
+    "url": "https://github.com/tushar-badhwar"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tushar-badhwar/nlsql-mcp-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tushar-badhwar/nlsql-mcp-server/issues"
+  },
+  "homepage": "https://github.com/tushar-badhwar/nlsql-mcp-server#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "child_process": "^1.0.2",
+    "chalk": "^4.1.2",
+    "commander": "^9.4.1",
+    "cross-spawn": "^7.0.3",
+    "ora": "^5.4.1"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "scripts/",
+    "python-src/",
+    "index.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "preferGlobal": true,
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ]
+}
