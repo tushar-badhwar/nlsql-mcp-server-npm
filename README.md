@@ -1,6 +1,7 @@
 # NLSQL MCP Server (Node.js)
 
-[![npm version](https://badge.fury.io/js/nlsql-mcp-server.svg)](https://badge.fury.io/js/nlsql-mcp-server)
+[![npm version](https://img.shields.io/npm/v/nlsql-mcp-server.svg)](https://www.npmjs.com/package/nlsql-mcp-server)
+[![npm downloads](https://img.shields.io/npm/dm/nlsql-mcp-server.svg)](https://www.npmjs.com/package/nlsql-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A production-ready Node.js package that provides an MCP (Model Context Protocol) server for converting natural language questions into SQL queries using AI-powered multi-agent systems.
