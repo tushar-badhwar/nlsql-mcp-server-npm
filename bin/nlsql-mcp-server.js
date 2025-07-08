@@ -31,21 +31,30 @@ program
     .option('--env-file <file>', 'Environment file to load')
     .action(async (options) => {
         try {
-            console.log(chalk.blue.bold(`🤖 NLSQL MCP Server v${packageJson.version}`));
-            console.log(chalk.gray('Convert natural language to SQL using AI\n'));
+            // Detect MCP mode (no TTY input - either false or undefined when piped)
+            const mcpMode = !process.stdin.isTTY;
+            
+            if (!mcpMode) {
+                console.log(chalk.blue.bold(`🤖 NLSQL MCP Server v${packageJson.version}`));
+                console.log(chalk.gray('Convert natural language to SQL using AI\n'));
+            }
 
             // Load environment file if specified
             if (options.envFile) {
                 if (fs.existsSync(options.envFile)) {
                     require('dotenv').config({ path: options.envFile });
-                    console.log(chalk.green(`📁 Loaded environment from: ${options.envFile}`));
+                    if (!mcpMode) {
+                        console.log(chalk.green(`📁 Loaded environment from: ${options.envFile}`));
+                    }
                 } else {
-                    console.warn(chalk.yellow(`⚠️  Environment file not found: ${options.envFile}`));
+                    if (!mcpMode) {
+                        console.warn(chalk.yellow(`⚠️  Environment file not found: ${options.envFile}`));
+                    }
                 }
             }
 
             // Check for OpenAI API key
-            if (!process.env.OPENAI_API_KEY) {
+            if (!process.env.OPENAI_API_KEY && !mcpMode) {
                 console.warn(chalk.yellow('⚠️  OpenAI API key not set. Natural language features will not work.'));
                 console.log(chalk.gray('   Set OPENAI_API_KEY environment variable or use --env-file\n'));
             }

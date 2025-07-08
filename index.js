@@ -80,14 +80,17 @@ except ImportError as e:
 
     async start() {
         try {
-            if (this.options.debug) {
+            // Determine if we're in MCP mode (stdio communication)
+            const mcpMode = !process.stdin.isTTY;
+            
+            if (!mcpMode && this.options.debug) {
                 console.log(chalk.blue('🔍 Checking Python dependencies...'));
             }
 
             // Check if Python dependencies are installed
             await this.checkPythonDependencies();
 
-            if (this.options.debug) {
+            if (!mcpMode && this.options.debug) {
                 console.log(chalk.green('✅ Python dependencies OK'));
                 console.log(chalk.blue('🚀 Starting NLSQL MCP Server...'));
             }
@@ -97,22 +100,29 @@ except ImportError as e:
                 throw new Error(`Python server file not found at: ${this.options.serverPath}`);
             }
 
+            // In MCP mode, use pure stdio without any console output
+            const stdio = mcpMode ? 'inherit' : ['inherit', 'inherit', 'inherit'];
+
             // Spawn the Python MCP server
             this.process = spawn(this.options.pythonExecutable, ['-m', 'nlsql_mcp_server.server'], {
                 cwd: this.options.cwd,
-                stdio: ['inherit', 'inherit', 'inherit'],
-                env: this.options.env
+                stdio: stdio,
+                env: { ...this.options.env, MCP_MODE: mcpMode ? '1' : '0' }
             });
 
             // Handle process events
             this.process.on('error', (err) => {
-                console.error(chalk.red('❌ Failed to start Python server:'), err.message);
+                if (!mcpMode) {
+                    console.error(chalk.red('❌ Failed to start Python server:'), err.message);
+                }
                 process.exit(1);
             });
 
             this.process.on('close', (code) => {
-                if (code !== 0) {
+                if (code !== 0 && !mcpMode) {
                     console.error(chalk.red(`❌ Python server exited with code ${code}`));
+                }
+                if (code !== 0) {
                     process.exit(code);
                 }
             });
@@ -126,16 +136,19 @@ except ImportError as e:
                 this.stop();
             });
 
-            if (this.options.debug) {
+            if (!mcpMode && this.options.debug) {
                 console.log(chalk.green('✅ NLSQL MCP Server started successfully'));
             }
 
         } catch (error) {
-            console.error(chalk.red('❌ Error starting server:'), error.message);
-            
-            if (error.message.includes('MISSING_DEPENDENCY')) {
-                console.log(chalk.yellow('\n💡 Try running: npm run install-python-deps'));
-                console.log(chalk.yellow('Or manually install: pip install -r requirements.txt'));
+            const mcpMode = !process.stdin.isTTY;
+            if (!mcpMode) {
+                console.error(chalk.red('❌ Error starting server:'), error.message);
+                
+                if (error.message.includes('MISSING_DEPENDENCY')) {
+                    console.log(chalk.yellow('\n💡 Try running: npm run install-python-deps'));
+                    console.log(chalk.yellow('Or manually install: pip install -r requirements.txt'));
+                }
             }
             
             process.exit(1);
