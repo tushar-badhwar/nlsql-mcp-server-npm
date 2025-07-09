@@ -71,6 +71,31 @@ cryptography>=41.0.0`;
     try {
         console.log(chalk.blue('📦 Installing Python packages...'));
         
+        // First install nl2sql dependencies if available
+        const nl2sqlRequirementsPath = path.join(__dirname, '..', 'nl2sql', 'requirements.txt');
+        if (fs.existsSync(nl2sqlRequirementsPath)) {
+            console.log(chalk.blue('📦 Installing nl2sql dependencies...'));
+            await new Promise((resolve, reject) => {
+                const nl2sqlInstallProcess = spawn(pythonCmd, ['-m', 'pip', 'install', '-r', nl2sqlRequirementsPath], {
+                    stdio: 'inherit'
+                });
+
+                nl2sqlInstallProcess.on('close', (code) => {
+                    if (code === 0) {
+                        resolve();
+                    } else {
+                        reject(new Error(`nl2sql pip install failed with code ${code}`));
+                    }
+                });
+
+                nl2sqlInstallProcess.on('error', (err) => {
+                    reject(new Error(`Failed to run pip for nl2sql: ${err.message}`));
+                });
+            });
+            console.log(chalk.green('✅ nl2sql dependencies installed successfully!'));
+        }
+        
+        // Then install MCP server dependencies
         await new Promise((resolve, reject) => {
             const installProcess = spawn(pythonCmd, ['-m', 'pip', 'install', '-r', requirementsPath], {
                 stdio: 'inherit'
@@ -89,7 +114,7 @@ cryptography>=41.0.0`;
             });
         });
 
-        console.log(chalk.green('✅ Python dependencies installed successfully!'));
+        console.log(chalk.green('✅ MCP server dependencies installed successfully!'));
 
     } catch (error) {
         console.warn(chalk.yellow(`⚠️  Failed to install Python dependencies: ${error.message}`));
