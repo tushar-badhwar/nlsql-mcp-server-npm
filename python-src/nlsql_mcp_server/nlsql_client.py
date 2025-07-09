@@ -19,6 +19,7 @@ import json
 
 # Try different possible directory names and locations
 possible_dirs = [
+    Path(__file__).parent.parent.parent / "nl2sql",        # npm package structure
     Path(__file__).parent.parent.parent.parent / "nl2sql",  # Standard GitHub repo name
     Path(__file__).parent.parent.parent.parent / "nlsql",   # Alternative name
     Path("/home/tbadhwar/nlsql"),                           # Absolute path fallback
