@@ -1,6 +1,6 @@
 {
   "name": "nlsql-mcp-server",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Node.js wrapper for NLSQL MCP Server - Convert natural language to SQL using AI",
   "main": "index.js",
   "bin": {
