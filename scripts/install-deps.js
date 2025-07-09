@@ -102,6 +102,7 @@ async function downloadPythonSource() {
     console.log(chalk.blue('📥 Setting up Python source code...'));
 
     const pythonSrcDir = path.join(__dirname, '..', 'python-src');
+    const nl2sqlDir = path.join(__dirname, '..', 'nl2sql');
     
     // Create python-src directory if it doesn't exist
     if (!fs.existsSync(pythonSrcDir)) {
@@ -116,6 +117,36 @@ async function downloadPythonSource() {
         console.log(chalk.gray('   The Python source should be included in the npm package.'));
         console.log(chalk.gray('   If you\'re running from source, copy the src/ directory to python-src/'));
         return false;
+    }
+
+    // Check if nl2sql is available
+    if (!fs.existsSync(nl2sqlDir)) {
+        console.log(chalk.yellow('⚠️  nl2sql application not found.'));
+        console.log(chalk.gray('   Downloading nl2sql from GitHub...'));
+        
+        try {
+            const { spawn } = require('child_process');
+            await new Promise((resolve, reject) => {
+                const gitProcess = spawn('git', ['submodule', 'update', '--init', '--recursive'], {
+                    cwd: path.join(__dirname, '..'),
+                    stdio: 'inherit'
+                });
+                
+                gitProcess.on('close', (code) => {
+                    if (code === 0) resolve();
+                    else reject(new Error(`Git submodule update failed with code ${code}`));
+                });
+                
+                gitProcess.on('error', reject);
+            });
+            
+            console.log(chalk.green('✅ nl2sql downloaded successfully'));
+        } catch (error) {
+            console.warn(chalk.yellow(`⚠️  Failed to download nl2sql: ${error.message}`));
+            console.log(chalk.gray('   You may need to install nl2sql manually.'));
+        }
+    } else {
+        console.log(chalk.green('✅ nl2sql application found'));
     }
 
     console.log(chalk.green('✅ Python source code ready'));

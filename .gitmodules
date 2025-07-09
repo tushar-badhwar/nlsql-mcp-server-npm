@@ -1,0 +1,3 @@
+[submodule "nl2sql"]
+	path = nl2sql
+	url = https://github.com/tushar-badhwar/nl2sql.git
