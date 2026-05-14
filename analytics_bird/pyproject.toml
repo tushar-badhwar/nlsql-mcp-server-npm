@@ -15,5 +15,8 @@ openai = ["openai-agents>=0.1"]
 gemini = ["google-adk>=0.1"]
 dev = ["pytest>=8.0", "ruff>=0.6"]
 
+[tool.setuptools]
+packages = ["bird", "tools", "tracing", "adapters"]
+
 [tool.ruff]
 line-length = 110

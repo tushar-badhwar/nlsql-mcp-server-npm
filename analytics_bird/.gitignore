@@ -4,4 +4,5 @@ runs/
 __pycache__/
 *.egg-info/
 .venv/
+bird/data
 bird/data/
