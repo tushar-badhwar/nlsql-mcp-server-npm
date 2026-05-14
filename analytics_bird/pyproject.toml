@@ -1,0 +1,19 @@
+[project]
+name = "analytics-bird"
+version = "0.1.0"
+description = "Analytics agent benchmark on BIRD — v1 deployment per v1_plan.md"
+requires-python = ">=3.10"
+dependencies = [
+    "sqlalchemy>=2.0",
+]
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.0"]
+postgres = ["psycopg[binary]>=3.1"]
+claude = ["anthropic>=0.40", "claude-agent-sdk>=0.1"]
+openai = ["openai-agents>=0.1"]
+gemini = ["google-adk>=0.1"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[tool.ruff]
+line-length = 110
