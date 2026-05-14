@@ -27,16 +27,23 @@ Synthesizes `v0_proposal.md` (analytics SOTA benchmark) with `v0_critique.md` (s
 
 If any of these creep in during weeks 1–6, that's the framework instinct firing. Resist.
 
+## Status (as of 2026-05-13)
+
+- **Week 1 — done.** `analytics_bird/` scaffolded with 6 SQL tool primitives over SQLAlchemy (read-only enforced), JSONL trace writer, BIRD dataset loader + downloader + execution-accuracy scorer. `run_five.py` reports EX=1.00 on gold-on-gold (5 questions, california_schools). BIRD dev set (346 MB) downloaded locally, gitignored under `analytics_bird/bird/data/`.
+- **BIRD-mini locked.** 50-question subset at `analytics_bird/bird/mini.json` — stratified by difficulty (30 simple / 15 moderate / 5 challenging, proportional to dev set) with all 11 DBs represented. Deterministic via `seed=42`; `python -m bird.mini --verify` enforces no silent drift.
+- **Week 2 in flight** in worktree `../nlsql-mcp-server-npm-week2` on branch `week2-claude-adapter` — MCP stdio server + Claude Agent SDK adapter + BIRD bench runner. Already shipped commit `69795d2`.
+- **Eval hardening in flight** in worktree `../nlsql-mcp-server-npm-eval` on branch `eval-hardening` — scorer alignment with BIRD's official evaluator + edge-case tests. Already shipped commits `6b0ec25` and `ee978e9`.
+
 ## Week-by-week build
 
-| Week | Deliverable | Success signal |
-|---|---|---|
-| 1 | BIRD dataset downloaded; 6 MCP tool primitives over SQLite; manual run of 5 questions; JSONL trace format defined. | One BIRD question answered correctly end-to-end. |
-| 2 | Claude Agent SDK adapter; BIRD-mini (50 questions) loop; basic prompt + tool iteration. | Execution accuracy > 50% on BIRD-mini. |
-| 3 | Full BIRD dev run with Sonnet 4.6; failure-mode analysis (categorized). | First real number, ≥ 60% targeted; failure modes documented. |
-| 4 | OpenAI Agents SDK + Gemini ADK adapters; BIRD-mini parity check across all three SDKs. | Three-SDK harness produces comparable numbers (within ±2%) on the same questions with the same model. |
-| 5 | Full BIRD dev × 3 models × 3 SDKs; internal results doc with EX, VES, tokens, wall-clock. | 9-cell matrix with one clear winner; one architectural insight that wasn't obvious going in. |
-| 6 | Decision gate: Spider 2.0 next, or pivot to second use case for `kit/` extraction. | Written go/no-go on Spider 2.0. |
+| Week | Deliverable | Success signal | Status |
+|---|---|---|---|
+| 1 | BIRD dataset downloaded; 6 MCP tool primitives over SQLite; manual run of 5 questions; JSONL trace format defined. | One BIRD question answered correctly end-to-end. | ✅ done — EX=1.00 on 5 gold-on-gold |
+| 2 | Claude Agent SDK adapter; BIRD-mini (50 questions) loop; basic prompt + tool iteration. | Execution accuracy > 50% on BIRD-mini. | 🟡 in worktree |
+| 3 | Full BIRD dev run with Sonnet 4.6; failure-mode analysis (categorized). | First real number, ≥ 60% targeted; failure modes documented. | — |
+| 4 | OpenAI Agents SDK + Gemini ADK adapters; BIRD-mini parity check across all three SDKs. | Three-SDK harness produces comparable numbers (within ±2%) on the same questions with the same model. | — |
+| 5 | Full BIRD dev × 3 models × 3 SDKs; internal results doc with EX, VES, tokens, wall-clock. | 9-cell matrix with one clear winner; one architectural insight that wasn't obvious going in. | — |
+| 6 | Decision gate: Spider 2.0 next, or pivot to second use case for `kit/` extraction. | Written go/no-go on Spider 2.0. | — |
 
 Six weeks, one engineer, one repo.
 
