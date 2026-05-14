@@ -8,14 +8,12 @@ const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
+const chalk = require('chalk');
 const NLSQLMCPServer = require('../index.js');
-const ConfigManager = require('../lib/config.js');
-const { Logger } = require('../lib/logger.js');
 
 class TestRunner {
     constructor() {
         this.tests = [];
-        this.logger = new Logger({ prefix: 'TEST' });
         this.passed = 0;
         this.failed = 0;
     }
@@ -25,28 +23,28 @@ class TestRunner {
     }
 
     async runTests() {
-        this.logger.header('NLSQL MCP Server Test Suite');
-        
+        console.log(chalk.blue.bold('\n=== NLSQL MCP Server Test Suite ===\n'));
+
         for (const test of this.tests) {
             try {
-                this.logger.step(`Running: ${test.name}`);
+                console.log(chalk.gray(`▶ Running: ${test.name}`));
                 await test.testFn();
-                this.logger.success(`PASS: ${test.name}`);
+                console.log(chalk.green(`  ✅ PASS: ${test.name}`));
                 this.passed++;
             } catch (error) {
-                this.logger.error(`FAIL: ${test.name} - ${error.message}`);
+                console.log(chalk.red(`  ❌ FAIL: ${test.name} - ${error.message}`));
                 this.failed++;
             }
         }
 
-        this.logger.separator();
-        this.logger.info(`Tests completed: ${this.passed} passed, ${this.failed} failed`);
-        
+        console.log(chalk.gray('\n---'));
+        console.log(`Tests completed: ${this.passed} passed, ${this.failed} failed`);
+
         if (this.failed === 0) {
-            this.logger.success('All tests passed! 🎉');
+            console.log(chalk.green('All tests passed! 🎉'));
             return true;
         } else {
-            this.logger.error(`${this.failed} test(s) failed`);
+            console.log(chalk.red(`${this.failed} test(s) failed`));
             return false;
         }
     }
@@ -61,50 +59,20 @@ async function main() {
         assert(packageJson.name === 'nlsql-mcp-server', 'Package name incorrect');
         assert(packageJson.version, 'Version not defined');
         assert(packageJson.bin, 'Binary not defined');
-        
-        // Check required files exist
+
         const requiredFiles = [
             '../index.js',
             '../bin/nlsql-mcp-server.js',
-            '../lib/config.js',
-            '../lib/logger.js',
             '../scripts/install-deps.js'
         ];
-        
+
         for (const file of requiredFiles) {
             const fullPath = path.join(__dirname, file);
             assert(fs.existsSync(fullPath), `Required file missing: ${file}`);
         }
     });
 
-    // Test 2: Configuration manager
-    runner.addTest('Configuration manager', async () => {
-        const config = new ConfigManager();
-        const defaultConfig = config.getDefaultConfig();
-        
-        assert(defaultConfig.python, 'Python config missing');
-        assert(defaultConfig.server, 'Server config missing');
-        assert(Array.isArray(defaultConfig.python.requirements), 'Requirements should be array');
-        
-        // Test Claude Desktop config generation
-        const claudeConfig = config.generateClaudeDesktopConfig();
-        assert(claudeConfig.mcpServers, 'MCP servers config missing');
-        assert(claudeConfig.mcpServers.nlsql, 'NLSQL server config missing');
-    });
-
-    // Test 3: Logger functionality
-    runner.addTest('Logger functionality', async () => {
-        const logger = new Logger({ level: 'debug' });
-        
-        assert(logger.shouldLog('error'), 'Should log error');
-        assert(logger.shouldLog('debug'), 'Should log debug');
-        
-        const logger2 = new Logger({ level: 'warn' });
-        assert(logger2.shouldLog('error'), 'Should log error');
-        assert(!logger2.shouldLog('debug'), 'Should not log debug');
-    });
-
-    // Test 4: Python detection
+    // Test 2: Python detection
     runner.addTest('Python detection', async () => {
         const pythonExecutables = ['python3', 'python', 'py'];
         let pythonFound = false;
@@ -132,64 +100,46 @@ async function main() {
         assert(pythonFound, 'Python executable not found');
     });
 
-    // Test 5: Server instantiation
+    // Test 3: Server instantiation
     runner.addTest('Server instantiation', async () => {
         const server = new NLSQLMCPServer({
             debug: true
         });
-        
+
         assert(server.options, 'Server options not set');
         assert(server.options.debug === true, 'Debug option not set');
-        
+
         const status = server.getStatus();
         assert(status.running === false, 'Server should not be running initially');
         assert(status.pid === null, 'PID should be null initially');
     });
 
-    // Test 6: Requirements file creation
+    // Test 4: Requirements file handling
     runner.addTest('Requirements file handling', async () => {
         const { installPythonDependencies } = require('../scripts/install-deps.js');
-        
-        // Test that the install script exists and can be required
+
         assert(typeof installPythonDependencies === 'function', 'Install function not exported');
-        
-        // Check if requirements.txt would be created
-        const testRequirementsPath = path.join(__dirname, '..', 'python-src', 'requirements.txt');
-        const parentDir = path.dirname(testRequirementsPath);
-        
-        if (!fs.existsSync(parentDir)) {
-            fs.mkdirSync(parentDir, { recursive: true });
-        }
-        
-        if (!fs.existsSync(testRequirementsPath)) {
-            const basicRequirements = `mcp>=1.0.0
-crewai>=0.22.0`;
-            fs.writeFileSync(testRequirementsPath, basicRequirements);
-        }
-        
-        assert(fs.existsSync(testRequirementsPath), 'Requirements file should exist or be creatable');
+
+        const requirementsPath = path.join(__dirname, '..', 'python-src', 'requirements.txt');
+        assert(fs.existsSync(requirementsPath), 'Requirements file should exist');
     });
 
-    // Test 7: CLI script executable
+    // Test 5: CLI script executable
     runner.addTest('CLI script executable', async () => {
         const cliScript = path.join(__dirname, '..', 'bin', 'nlsql-mcp-server.js');
-        
-        // Check file exists
+
         assert(fs.existsSync(cliScript), 'CLI script not found');
-        
-        // Check it's executable (on Unix systems)
+
         if (process.platform !== 'win32') {
             const stats = fs.statSync(cliScript);
             const isExecutable = !!(stats.mode & parseInt('111', 8));
             assert(isExecutable, 'CLI script not executable');
         }
-        
-        // Check shebang
+
         const content = fs.readFileSync(cliScript, 'utf8');
         assert(content.startsWith('#!/usr/bin/env node'), 'CLI script missing proper shebang');
     });
 
-    // Run all tests
     const success = await runner.runTests();
     process.exit(success ? 0 : 1);
 }
