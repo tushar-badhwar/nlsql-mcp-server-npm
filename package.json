@@ -42,7 +42,6 @@
     "node": ">=14.0.0"
   },
   "dependencies": {
-    "child_process": "^1.0.2",
     "chalk": "^4.1.2",
     "commander": "^9.4.1",
     "cross-spawn": "^7.0.3",
@@ -53,7 +52,6 @@
   },
   "files": [
     "bin/",
-    "lib/",
     "scripts/",
     "python-src/",
     "nl2sql/",
