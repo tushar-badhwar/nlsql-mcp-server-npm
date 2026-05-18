@@ -34,6 +34,17 @@ except ImportError:
 from nlsql_mcp_server.nlsql_client import NLSQLClient
 from nlsql_mcp_server.tools import NLSQLTools
 
+# Tools (and the prompt) that call OpenAI via CrewAI. Hidden from discovery
+# unless OPENAI_API_KEY is set, so the default experience is key-free: a
+# capable MCP client (e.g. Claude Desktop) does NL->SQL itself using the
+# primitive tools instead of being offered a worse, key-requiring tool.
+AI_TOOLS = {"natural_language_to_sql", "analyze_schema"}
+
+
+def _ai_enabled() -> bool:
+    return bool(os.getenv("OPENAI_API_KEY"))
+
+
 class CustomMCPServer:
     """Custom MCP server with direct JSON-RPC handling"""
     
@@ -56,6 +67,8 @@ class CustomMCPServer:
                 return await self.handle_initialize(request_id, params)
             elif method == "initialized":
                 return await self.handle_initialized()
+            elif method == "tools/list":
+                return await self.handle_tools_list(request_id)
             elif method == "tools/call":
                 return await self.handle_tool_call(request_id, params)
             elif method == "prompts/list":
@@ -145,6 +158,26 @@ class CustomMCPServer:
                 }
             }
     
+    async def handle_tools_list(self, request_id):
+        """Handle tools/list discovery. AI tools are hidden unless a key is set."""
+        ai_on = _ai_enabled()
+        tools = []
+        for t in self.tools_manager.get_tools():
+            if not ai_on and t.name in AI_TOOLS:
+                continue
+            tools.append({
+                "name": t.name,
+                "description": t.description,
+                "inputSchema": getattr(t, "inputSchema", {"type": "object"}),
+            })
+        return {
+            "jsonrpc": "2.0",
+            "id": request_id,
+            "result": {
+                "tools": tools
+            }
+        }
+
     async def handle_prompts_list(self, request_id):
         """Handle prompts list request"""
         prompts = [
@@ -158,20 +191,23 @@ class CustomMCPServer:
                         "required": False
                     }
                 ]
-            },
-            {
+            }
+        ]
+        # generate_sql maps onto natural_language_to_sql; only advertise it
+        # when the AI path is actually available.
+        if _ai_enabled():
+            prompts.append({
                 "name": "generate_sql",
                 "description": "Generate SQL from natural language",
                 "arguments": [
                     {
-                        "name": "question", 
+                        "name": "question",
                         "description": "Natural language question",
                         "required": True
                     }
                 ]
-            }
-        ]
-        
+            })
+
         return {
             "jsonrpc": "2.0",
             "id": request_id,
