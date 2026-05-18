@@ -159,6 +159,13 @@ How many teams are in the NBA?
 | `natural_language_to_sql` | ✅ | Convert a question to SQL using AI |
 | `analyze_schema` | ✅ | AI-powered schema analysis |
 
+**Zero-key by default.** The two ✅ tools are only advertised when
+`OPENAI_API_KEY` is set. With no key, the server exposes just the 8 key-free
+tools — a capable MCP client like Claude Desktop then does
+natural-language→SQL itself (read schema → write SQL → execute) using those
+primitives, no OpenAI account required. Set a key only if you want the
+self-contained server-side AI path.
+
 ## CLI
 
 ```bash
