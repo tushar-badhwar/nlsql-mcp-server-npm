@@ -37,7 +37,7 @@ def main() -> int:
     jsonl_path = out_dir / "gold_sanity.jsonl"
     summary_path = out_dir / "gold_sanity.summary.json"
 
-    print(f"Loading BIRD dev questions ...")
+    print("Loading BIRD dev questions ...")
     questions = load_questions()
     print(f"  {len(questions)} questions, "
           f"{len(set(q.db_id for q in questions))} databases")
@@ -102,7 +102,7 @@ def main() -> int:
     with summary_path.open("w") as fh:
         json.dump(summary, fh, indent=2)
 
-    print(f"\n=== Aggregate ===")
+    print("\n=== Aggregate ===")
     print(f"  n={agg.n}  EX={agg.ex:.4f}  failures={agg.failures}  timeouts={agg.timeouts}")
     for d in DIFFICULTIES:
         ex_d = agg.ex_for(d)
