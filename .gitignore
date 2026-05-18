@@ -119,3 +119,8 @@ coverage/
 # Config files with secrets
 config/local.json
 config/production.json
+
+# Planning / design / spec docs — local only, not for the public repo
+v0_*.md
+v1_*.md
+npm_*.md
