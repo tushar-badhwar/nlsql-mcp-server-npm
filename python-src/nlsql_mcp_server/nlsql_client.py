@@ -13,6 +13,14 @@ from pathlib import Path
 import tempfile
 import json
 
+# Must be set BEFORE crewai is imported (below). CrewAI 0.2xx otherwise blocks
+# ~20s on an interactive "view execution traces? [y/N]" prompt on every crew
+# run, and emits OpenTelemetry/eventbus noise. setdefault so an explicit
+# operator override still wins.
+os.environ.setdefault("CREWAI_TRACING_ENABLED", "false")
+os.environ.setdefault("CREWAI_TELEMETRY_OPT_OUT", "true")
+os.environ.setdefault("OTEL_SDK_DISABLED", "true")
+
 # Add the nl2sql/nlsql directory to the Python path
 # This MCP server requires the original nl2sql application to be installed
 # Go up from src/nlsql_mcp_server/nlsql_client.py to parent directory, then look for nl2sql or nlsql
@@ -83,7 +91,10 @@ class NLSQLClient:
             
             if success:
                 self.connection_info = connection_params
-                self.crew = NL2SQLCrew(self.db_manager, model_name='gpt-4o')
+                # Crew is built lazily: it instantiates an LLM client and (under
+                # CrewAI 1.x) requires OPENAI_API_KEY at construction time. Plain
+                # DB ops (connect/inspect/validate/execute) must NOT need a key.
+                self.crew = None
                 self.schema_cache = None  # Reset schema cache
                 
                 # Get basic database info
@@ -128,13 +139,27 @@ class NLSQLClient:
         Returns:
             Dict[str, Any]: Connection result
         """
+        # nba.sqlite (~52 MB) is NOT bundled in the npm package; fetch it on
+        # first use and cache it next to the nl2sql modules.
         nba_db_path = NLSQL_DIR / "nba.sqlite"
         if not nba_db_path.exists():
-            return {
-                "success": False,
-                "error": "Sample NBA database not found"
-            }
-        
+            nba_url = "https://raw.githubusercontent.com/tushar-badhwar/nl2sql/main/nba.sqlite"
+            try:
+                import urllib.request
+                logger.info(f"Downloading sample NBA database from {nba_url} ...")
+                tmp_path = nba_db_path.with_suffix(".sqlite.part")
+                urllib.request.urlretrieve(nba_url, tmp_path)
+                tmp_path.replace(nba_db_path)
+                logger.info(f"Sample database cached at {nba_db_path}")
+            except Exception as e:
+                return {
+                    "success": False,
+                    "error": (
+                        f"Sample NBA database is not bundled and the download failed: {e}. "
+                        f"Manually place nba.sqlite at {nba_db_path} or check your network."
+                    ),
+                }
+
         result = self.connect_sqlite_file(str(nba_db_path))
         if result["success"]:
             result["message"] = "Connected to sample NBA database"
@@ -147,7 +172,20 @@ class NLSQLClient:
                 "Which teams were founded before 1950?"
             ]
         return result
-    
+
+    def _get_crew(self) -> NL2SQLCrew:
+        """Lazily construct the CrewAI crew.
+
+        Only the AI paths (schema analysis, natural-language-to-SQL) need this,
+        and only these require OPENAI_API_KEY. Building it here instead of at
+        connect time keeps connect/inspect/validate/execute key-free.
+        """
+        if not self.db_manager:
+            raise RuntimeError("No database connection established")
+        if self.crew is None:
+            self.crew = NL2SQLCrew(self.db_manager, model_name='gpt-4o')
+        return self.crew
+
     def analyze_schema(self, force_refresh: bool = False) -> Dict[str, Any]:
         """
         Analyze database schema
@@ -158,18 +196,18 @@ class NLSQLClient:
         Returns:
             Dict[str, Any]: Schema analysis result
         """
-        if not self.crew:
+        if not self.db_manager:
             return {
                 "success": False,
                 "error": "No database connection established"
             }
-        
+
         try:
             if force_refresh or not self.schema_cache:
                 db_type = self.connection_info.get('db_type', 'unknown')
                 db_path = self.connection_info.get('file_path', 'connected_database')
-                
-                schema_analysis = self.crew.analyze_schema(db_type, db_path)
+
+                schema_analysis = self._get_crew().analyze_schema(db_type, db_path)
                 self.schema_cache = schema_analysis
             
             return {
@@ -244,17 +282,17 @@ class NLSQLClient:
         Returns:
             Dict[str, Any]: Query processing result
         """
-        if not self.crew:
+        if not self.db_manager:
             return {
                 "success": False,
                 "error": "No database connection established"
             }
-        
+
         try:
             db_type = self.connection_info.get('db_type', 'unknown')
             db_path = self.connection_info.get('file_path', 'connected_database')
-            
-            result = self.crew.process_query(
+
+            result = self._get_crew().process_query(
                 natural_language_question=question,
                 use_full_workflow=True,
                 db_type=db_type,
