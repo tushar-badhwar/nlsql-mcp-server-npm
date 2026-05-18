@@ -230,26 +230,38 @@ async def main():
     if not mcp_mode:
         logger.info("Starting NLSQL Custom MCP Server...")
     
+    # In MCP/stdio mode stdout IS the JSON-RPC channel. Libraries we call
+    # (CrewAI, litellm, telemetry) print to stdout and would corrupt the
+    # protocol stream, so reserve the real stdout for protocol writes only
+    # and redirect everything else to stderr.
+    proto_out = sys.stdout
+    if mcp_mode:
+        sys.stdout = sys.stderr
+
+    def emit(obj):
+        proto_out.write(json.dumps(obj) + "\n")
+        proto_out.flush()
+
     server = CustomMCPServer()
-    
+
     try:
         while True:
             # Read line from stdin
             line = await asyncio.get_event_loop().run_in_executor(None, sys.stdin.readline)
             if not line:
                 break
-                
+
             line = line.strip()
             if not line:
                 continue
-            
+
             try:
                 request = json.loads(line)
                 response = await server.handle_request(request)
-                
+
                 if response:  # Only send response for requests, not notifications
-                    print(json.dumps(response), flush=True)
-                    
+                    emit(response)
+
             except json.JSONDecodeError as e:
                 logger.error(f"Invalid JSON: {e}")
                 error_response = {
@@ -260,7 +272,7 @@ async def main():
                         "message": "Parse error"
                     }
                 }
-                print(json.dumps(error_response), flush=True)
+                emit(error_response)
                 
     except KeyboardInterrupt:
         if not mcp_mode:

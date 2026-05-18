@@ -1,0 +1,32 @@
+# Slim runtime requirements for the NLSQL MCP server.
+#
+# Derived from an import audit of the modules actually loaded by the MCP path
+# (python-src/nlsql_mcp_server/* and nl2sql/{database_manager,crew_setup,agents,tasks,tools}.py).
+#
+# Deliberately EXCLUDES the nl2sql Streamlit web UI and dev tooling:
+#   streamlit, altair, pillow, pyarrow, tornado, watchdog, validators,
+#   tzlocal, markdown, pytest, pytest-asyncio, black, flake8, mypy
+# (streamlit is imported only inside a guarded try/except in crew_setup.py)
+#
+# Transitive deps (pydantic, numpy, python-dateutil, typing-extensions, etc.)
+# are pulled automatically by crewai/pandas and are not pinned here.
+#
+# CrewAI requires Python >=3.10,<3.14 — install-deps.js builds the venv with a
+# compatible interpreter; do not rely on the system `python3`.
+
+# crewai pinned <1.0: nl2sql/agents.py passes a LangChain ChatOpenAI object as
+# Agent(llm=...). CrewAI 1.x removed LangChain-LLM support (Agent.llm must be a
+# model string or crewai.BaseLLM), which breaks natural_language_to_sql with a
+# pydantic validation error. 0.x is the API nl2sql was written for.
+mcp>=1.0.0
+crewai>=0.140.0,<1.0
+langchain-openai>=0.1.0
+openai>=1.12.0
+sqlalchemy>=2.0.0
+pandas>=2.0.0
+python-dotenv>=1.0.0
+
+# Database connectors (advertised in README: SQLite/PostgreSQL/MySQL).
+# SQLite is stdlib; these enable the other two.
+pymysql>=1.1.0
+psycopg2-binary>=2.9.0
