@@ -19,7 +19,6 @@ from pathlib import Path
 import pytest
 
 from bird.score import (
-    Aggregate,
     QueryTimeout,
     ScoreResult,
     VESResult,
