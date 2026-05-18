@@ -66,22 +66,32 @@ class NLSQLMCPServer {
         // MCP mode = stdio transport (no TTY); keep stdout clean for JSON-RPC.
         const mcpMode = !process.stdin.isTTY;
 
-        // Self-heal: build the venv on first run if the install-time attempt
-        // didn't complete (no network, no compatible Python at the time, etc.).
         if (!isVenvReady()) {
-            if (!mcpMode) {
-                console.log(chalk.blue('🔧 Python environment not ready — setting up now...'));
+            if (mcpMode) {
+                // The venv build is a multi-minute pip install; it cannot
+                // complete inside an MCP client's handshake window. Attempting
+                // the self-heal here just produces a mysterious timeout. Fail
+                // fast with a diagnosable message on stderr (MCP clients
+                // surface stderr in their logs) and let the user warm the
+                // environment once in a terminal.
+                console.error(
+                    'NLSQL MCP server cannot start: Python environment is not built yet.\n' +
+                    'Run this once in a terminal, then restart your MCP client:\n' +
+                    '  npx nlsql-mcp-server install-deps\n'
+                );
+                process.exit(1);
             }
+            // Terminal mode: a human is watching and can wait for the one-time
+            // build, so self-heal here.
+            console.log(chalk.blue('🔧 Python environment not ready — setting up now...'));
             const ok = await ensureSetup();
             if (!ok) {
-                if (!mcpMode) {
-                    console.error(
-                        chalk.red('\n❌ Cannot start: Python environment is not set up.')
-                    );
-                    console.error(
-                        chalk.gray('   See the instructions above, then re-run.')
-                    );
-                }
+                console.error(
+                    chalk.red('\n❌ Cannot start: Python environment is not set up.')
+                );
+                console.error(
+                    chalk.gray('   See the instructions above, then re-run.')
+                );
                 process.exit(1);
             }
         }
