@@ -4,105 +4,115 @@
 [![npm downloads](https://img.shields.io/npm/dm/nlsql-mcp-server.svg)](https://www.npmjs.com/package/nlsql-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A production-ready Node.js package that provides an MCP (Model Context Protocol) server for converting natural language questions into SQL queries using AI-powered multi-agent systems.
+A Node.js package that runs an MCP (Model Context Protocol) server for converting
+natural language questions into SQL using an AI multi-agent system. It works with
+SQLite, PostgreSQL, and MySQL, and plugs into any MCP client (Claude Desktop, etc.).
 
-## Quick Start
+## Requirements
 
-```bash
-# Install globally
-npm install -g nlsql-mcp-server
+- **Node.js 14+**
+- **Python 3.10, 3.11, 3.12, or 3.13** — *not 3.14*. The underlying CrewAI
+  engine does not yet support Python 3.14. The installer auto-detects a
+  compatible interpreter; if you only have 3.14 it will tell you exactly what
+  to install.
+- **OpenAI API key** — **only** for the AI features (`natural_language_to_sql`,
+  `analyze_schema`). Connecting to a database and running/validating SQL needs
+  no key.
 
-# Start the server
-nlsql-mcp-server start
-
-# Or run directly with npx
-npx nlsql-mcp-server start
-```
-
-## Features
-
-- **AI-Powered**: Converts natural language to SQL using OpenAI and CrewAI
-- **Multi-Database**: Supports SQLite, PostgreSQL, and MySQL
-- **Smart Analysis**: AI-powered database schema analysis
-- **Easy Installation**: One-command setup with automatic Python dependency management
-- **MCP Protocol**: Full JSON-RPC implementation compatible with Claude Desktop and other MCP clients
-- **Safe Execution**: Query validation and configurable limits
-- **Sample Data**: Built-in NBA database for testing
-- **Production Ready**: Comprehensive error handling and logging
-
-## Prerequisites
-
-- **Node.js 14+**: JavaScript runtime
-- **Python 3.8+**: For the underlying MCP server
-- **OpenAI API Key**: For natural language processing
-
-## Installation
-
-### Global Installation (Recommended)
+## Install
 
 ```bash
 npm install -g nlsql-mcp-server
 ```
 
-### Local Installation
+This is the recommended first step **before** wiring it into any MCP client
+(see [Claude Desktop](#use-with-claude-desktop)). During install, a `postinstall`
+step:
 
-```bash
-npm install nlsql-mcp-server
+1. Probes for a compatible Python (`python3.13` → `3.12` → `3.11` → `3.10`).
+2. Builds a **dedicated virtualenv inside the package** and installs the Python
+   dependencies into it (a slim runtime set — a few minutes, one time). This is
+   isolated; it does not touch your system Python and is not affected by PEP 668
+   ("externally-managed-environment").
+3. On success: prints `Setup complete`.
+
+If **no compatible Python is found**, the install still completes but prints
+instructions, e.g.:
+
+```
+macOS:   brew install python@3.13
+Ubuntu:  sudo apt install python3.13 python3.13-venv
+Windows: winget install Python.Python.3.13
 ```
 
-The package will automatically:
-1. Detect your Python installation
-2. Install required Python dependencies
-3. Set up the NLSQL MCP server
-4. Verify the installation
-
-## Configuration
-
-### Environment Setup
+Install one, then run:
 
 ```bash
-# Set your OpenAI API key
-export OPENAI_API_KEY="your_api_key_here"
-
-# Or create a .env file
-echo "OPENAI_API_KEY=your_api_key_here" > .env
+npx nlsql-mcp-server install-deps   # (re)builds the virtualenv
 ```
 
-### Claude Desktop Setup (Step-by-Step)
+Verify everything is ready:
 
-#### Step 1: Install the Package
+```bash
+nlsql-mcp-server test
+```
+
+You should see the virtualenv and Python dependency checks pass. (The OpenAI
+key check will show ❌ until you set `OPENAI_API_KEY`; that only affects the AI
+features.)
+
+## How to use it end-to-end
+
+### 1. Install locally and build the environment
+
 ```bash
 npm install -g nlsql-mcp-server
+nlsql-mcp-server test          # confirms the venv + deps are ready
 ```
 
-#### Step 2: Get Your OpenAI API Key
-1. Go to [OpenAI API Keys](https://platform.openai.com/api-keys)
-2. Create a new API key
-3. Copy the key (starts with `sk-`)
+### 2. (Optional) Set an OpenAI key for the AI features
 
-#### Step 3: Find Your Claude Desktop Config File
+Only needed for natural-language → SQL and AI schema analysis:
 
-**On Windows:**
-1. Press `Windows + R`
-2. Type `%APPDATA%\Claude`
-3. Look for `claude_desktop_config.json`
+```bash
+export OPENAI_API_KEY="sk-your-key"
+```
 
-**On Mac:**
-1. Open Finder
-2. Press `Cmd + Shift + G`
-3. Type `~/Library/Application Support/Claude`
-4. Look for `claude_desktop_config.json`
+### 3. Connect to a database
 
-**On Linux:**
-1. Open file manager
-2. Go to `~/.config/Claude`
-3. Look for `claude_desktop_config.json`
+The server exposes tools to connect to your own database or a built-in sample:
 
-#### Step 4: Edit the Config File
+- **Your database:** `connect_database` with `db_type` = `sqlite` |
+  `postgresql` | `mysql` plus the relevant connection fields.
+- **Sample database:** `connect_sample_database` connects to an NBA dataset
+  (30 teams, 15 tables). The ~52 MB SQLite file is **downloaded on first use**
+  (it is not bundled in the package), then cached locally.
 
-**If the file exists:** Open it and add the nlsql configuration to the existing `mcpServers` section.
+Connecting, inspecting schema, sampling rows, validating and executing SQL all
+work **without an API key**.
 
-**If the file doesn't exist:** Create a new file called `claude_desktop_config.json` with this content:
+### 4. Use it from Claude Desktop (MCP client)
+
+Once installed and warmed up (steps 1–2), point Claude Desktop at it and
+interact in natural language. Setup below.
+
+## Use with Claude Desktop
+
+> **Important ordering:** install and warm the environment *first*
+> (`npm install -g nlsql-mcp-server` and `nlsql-mcp-server test`), *then* add
+> the config below. The first-time Python environment build takes a few
+> minutes and cannot complete inside an MCP client's startup handshake — if
+> you wire it in before the virtualenv exists, the server exits immediately
+> with a message in the MCP client logs telling you to run
+> `npx nlsql-mcp-server install-deps` once in a terminal.
+
+### 1. Find your Claude Desktop config file
+
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux:** `~/.config/Claude/claude_desktop_config.json`
+
+### 2. Add the server
 
 ```json
 {
@@ -111,235 +121,112 @@ npm install -g nlsql-mcp-server
       "command": "npx",
       "args": ["nlsql-mcp-server", "start"],
       "env": {
-        "OPENAI_API_KEY": "sk-your-actual-api-key-here"
+        "OPENAI_API_KEY": "sk-your-key-here"
       }
     }
   }
 }
 ```
 
-**Important:** Replace `sk-your-actual-api-key-here` with your real OpenAI API key!
+The `env` block is optional — omit `OPENAI_API_KEY` if you only need
+connect/inspect/validate/execute (no AI). Add it to enable
+`natural_language_to_sql`.
 
-#### Step 5: Restart Claude Desktop
-1. Completely close Claude Desktop
-2. Open Claude Desktop again
-3. The nlsql server should now be available
+### 3. Restart Claude Desktop
 
-#### Step 6: Test It Works
-In Claude Desktop, try asking:
+Fully quit and reopen. Then try:
+
 ```
-"Connect to the sample database and show me what tables are available"
+Connect to the sample database and show me what tables are available.
 ```
 
-If it works, you'll see Claude connect to the NBA sample database!
+```
+How many teams are in the NBA?
+```
 
-## Usage
+## Available tools
 
-### Command Line Interface
+| Tool | Needs OpenAI key? | Description |
+|------|:---:|-------------|
+| `connect_database` | – | Connect to SQLite, PostgreSQL, or MySQL |
+| `connect_sample_database` | – | Connect to the NBA sample DB (downloaded on first use) |
+| `get_database_info` | – | Tables, columns, relationships |
+| `get_table_sample` | – | Sample rows from a table |
+| `validate_sql_query` | – | Validate SQL syntax |
+| `execute_sql_query` | – | Execute SQL safely |
+| `get_connection_status` | – | Current connection status |
+| `disconnect_database` | – | Disconnect |
+| `natural_language_to_sql` | ✅ | Convert a question to SQL using AI |
+| `analyze_schema` | ✅ | AI-powered schema analysis |
+
+**Zero-key by default.** The two ✅ tools are only advertised when
+`OPENAI_API_KEY` is set. With no key, the server exposes just the 8 key-free
+tools — a capable MCP client like Claude Desktop then does
+natural-language→SQL itself (read schema → write SQL → execute) using those
+primitives, no OpenAI account required. Set a key only if you want the
+self-contained server-side AI path.
+
+## CLI
 
 ```bash
-# Start the MCP server
-nlsql-mcp-server start
-
-# Start with debug mode
-nlsql-mcp-server start --debug
-
-# Test the installation
-nlsql-mcp-server test
-
-# Install/reinstall Python dependencies
-nlsql-mcp-server install-deps
-
-# Generate Claude Desktop config
-nlsql-mcp-server config
-
-# Show help
+nlsql-mcp-server start            # start the MCP server (stdio)
+nlsql-mcp-server start --debug    # start with verbose logging
+nlsql-mcp-server test             # check venv + deps + key
+nlsql-mcp-server install-deps     # (re)build the Python virtualenv
+nlsql-mcp-server config           # print a Claude Desktop config snippet
 nlsql-mcp-server --help
-```
-
-### Programmatic Usage
-
-```javascript
-const NLSQLMCPServer = require('nlsql-mcp-server');
-
-const server = new NLSQLMCPServer({
-    debug: true,
-    pythonExecutable: 'python3',
-    env: {
-        OPENAI_API_KEY: 'your_key_here'
-    }
-});
-
-await server.start();
-```
-
-## Available Tools
-
-When running, the server provides these MCP tools:
-
-| Tool | Description |
-|------|-------------|
-| `connect_database` | Connect to SQLite, PostgreSQL, or MySQL |
-| `connect_sample_database` | Connect to built-in NBA sample database |
-| `natural_language_to_sql` | Convert questions to SQL using AI |
-| `execute_sql_query` | Execute SQL queries safely |
-| `analyze_schema` | AI-powered database schema analysis |
-| `get_database_info` | Get table and column information |
-| `validate_sql_query` | Validate SQL syntax |
-| `get_table_sample` | Get sample data from tables |
-| `get_connection_status` | Check database connection status |
-| `disconnect_database` | Disconnect from database |
-
-## Examples
-
-### Claude Desktop Usage
-
-After setting up Claude Desktop integration, you can use natural language to interact with your databases:
-
-```
-Connect to my sample database and show me the schema
-```
-
-```
-Convert this to SQL: "How many teams are in the NBA?"
-```
-
-```
-Show me sample data from the team table
-```
-
-```
-Analyze my database structure and suggest useful queries
-```
-
-### Sample Database
-
-Test with the built-in NBA database (30 teams, 15 tables with players, games, stats):
-
-```
-Use the connect_sample_database tool
-```
-
-Then ask questions like:
-- "How many teams are in the NBA?" → Returns: 30 teams
-- "Show me sample data from the team table"
-- "List teams from California"
-- "Validate this SQL: SELECT COUNT(*) FROM team"
-
-## Testing
-
-```bash
-# Test the Node.js wrapper
-npm test
-
-# Test the underlying Python server
-nlsql-mcp-server test
-
-# Test with sample database
-nlsql-mcp-server start --debug
-# Then use with Claude Desktop
 ```
 
 ## Troubleshooting
 
-### Common Issues
+**`No CrewAI-compatible Python found (need 3.10–3.13)`**
+Your default Python is 3.14 (or none in range). Install a compatible one
+(`brew install python@3.13`, `apt install python3.13 python3.13-venv`, or
+`winget install Python.Python.3.13`), then run
+`npx nlsql-mcp-server install-deps`.
 
-#### "Python not found"
-```bash
-# Install Python 3.8+
-# On Ubuntu/Debian:
-sudo apt update && sudo apt install python3 python3-pip
+**Claude Desktop shows the server failing immediately**
+Check the MCP client logs. If it says the Python environment is not built,
+run `npx nlsql-mcp-server install-deps` once in a terminal, wait for it to
+finish, then restart Claude Desktop. This happens when the server was wired
+in before the one-time environment build completed.
 
-# On macOS:
-brew install python3
+**`natural_language_to_sql` returns a credentials error**
+`OPENAI_API_KEY` is not set in the environment the server runs in. For Claude
+Desktop, put it in the `env` block of the config. Other tools work without it.
 
-# On Windows:
-# Download from python.org
-```
-
-#### "Failed to install Python dependencies"
-```bash
-# Manual installation
-nlsql-mcp-server install-deps
-
-# Or install manually
-pip3 install mcp crewai sqlalchemy pandas openai python-dotenv psycopg2-binary pymysql cryptography
-```
-
-#### "OpenAI API key not found"
-```bash
-# Set environment variable
-export OPENAI_API_KEY="your_key_here"
-
-# Or use .env file
-echo "OPENAI_API_KEY=your_key_here" > .env
-```
-
-#### "Server won't start"
-```bash
-# Debug mode for detailed logs
-nlsql-mcp-server start --debug
-
-# Test installation
-nlsql-mcp-server test
-```
-
-### Debug Mode
-
-Run with debug mode for detailed logging:
+**Reinstall the Python environment from scratch**
 
 ```bash
-nlsql-mcp-server start --debug
+npx nlsql-mcp-server install-deps
 ```
 
-### Log Files
+This deletes and rebuilds the package virtualenv.
 
-Logs are written to:
-- **Linux/macOS**: `~/.config/nlsql-mcp-server/logs/`
-- **Windows**: `%APPDATA%\nlsql-mcp-server\logs\`
+## How it works
 
-## Integration Examples
-
-### VS Code with Continue.dev
-
-Add to your Continue.dev configuration:
-
-```json
-{
-  "mcpServers": {
-    "nlsql": {
-      "command": "npx",
-      "args": ["nlsql-mcp-server", "start"]
-    }
-  }
-}
+```
+MCP client (Claude Desktop)
+        │  JSON-RPC over stdio
+        ▼
+Node wrapper (index.js)  ──spawns──►  Python MCP server (package virtualenv)
+                                          │
+                                          ▼
+                                   nl2sql + CrewAI agents
+                                   SQLite / PostgreSQL / MySQL
 ```
 
-### Custom Applications
+The Node layer manages the isolated Python virtualenv and process; the Python
+layer runs the MCP protocol and the SQL/AI logic. The CrewAI engine is pinned
+to the 0.x line it was built against, and its console/telemetry output is kept
+off the protocol channel.
 
-```javascript
-const { spawn } = require('child_process');
+## Testing
 
-const mcpServer = spawn('npx', ['nlsql-mcp-server', 'start'], {
-    stdio: ['pipe', 'pipe', 'pipe'],
-    env: {
-        ...process.env,
-        OPENAI_API_KEY: 'your_key_here'
-    }
-});
-
-// Handle MCP protocol communication
-mcpServer.stdout.on('data', handleMCPMessage);
-mcpServer.stdin.write(JSON.stringify(mcpRequest));
+```bash
+npm test                  # Node wrapper unit tests
+nlsql-mcp-server test     # installation / environment checks
 ```
-
-## Performance
-
-- **Startup Time**: ~2-3 seconds
-- **Database Operations**: <1 second (connect, query, validate)
-- **AI Processing**: 5-15 seconds (natural language to SQL, schema analysis)
-- **Memory Usage**: ~100-200MB
-- **Database Support**: SQLite, PostgreSQL, MySQL
 
 ## Contributing
 
@@ -351,19 +238,18 @@ mcpServer.stdin.write(JSON.stringify(mcpRequest));
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE).
 
 ## Credits
 
-- **Original Python Server**: [NLSQL MCP Server](https://github.com/tushar-badhwar/nlsql-mcp-server)
-- **Underlying Application**: [nl2sql](https://github.com/tushar-badhwar/nl2sql)
-- **Built with**: [Model Context Protocol (MCP)](https://modelcontextprotocol.io/), [CrewAI](https://crewai.com/), [OpenAI](https://openai.com/)
+- **Original Python server:** [NLSQL MCP Server](https://github.com/tushar-badhwar/nlsql-mcp-server)
+- **Underlying application:** [nl2sql](https://github.com/tushar-badhwar/nl2sql)
+- **Built with:** [Model Context Protocol](https://modelcontextprotocol.io/), [CrewAI](https://crewai.com/), [OpenAI](https://openai.com/)
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/tushar-badhwar/nlsql-mcp-server/issues)
-- **Documentation**: [GitHub Repository](https://github.com/tushar-badhwar/nlsql-mcp-server)
-- **Discussions**: [GitHub Discussions](https://github.com/tushar-badhwar/nlsql-mcp-server/discussions)
+- **Issues:** [GitHub Issues](https://github.com/tushar-badhwar/nlsql-mcp-server/issues)
+- **Repository:** [GitHub](https://github.com/tushar-badhwar/nlsql-mcp-server)
 
 ---
 
